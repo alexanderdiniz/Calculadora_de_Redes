@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Redes — Passo a Passo</title>
+<style>
+  :root, [data-theme="dark"] {
+    --bg-start:#15191d; --bg-end:#1a1f24;
+    --surface:#1d2329; --surface-alt:#222831; --surface-elevated:#262d36;
+    --border:#2d3540; --border-strong:#3a4351;
+    --text:#e8edf3; --text-mid:#b8c2cf; --text-muted:#8b95a3;
+    --brand:#4b538b; --brand-2:#d60257; --warm-1:#f7a21b; --warm-2:#e45635;
+    --primary-text:#8b95c9; --primary-soft:rgba(75,83,139,0.22);
+    --accent:#f7a21b; --accent-text:#f7a21b;
+    --accent-soft:rgba(247,162,27,0.10); --accent-border:rgba(247,162,27,0.40);
+    --danger:#e45635; --danger-text:#ff8567;
+    --danger-soft:rgba(228,86,53,0.12); --danger-border:rgba(228,86,53,0.45);
+    --magenta:#d60257; --magenta-text:#ff4d8f;
+    --success:#10b981;
+    --gradient-primary:linear-gradient(135deg,#4b538b 0%,#d60257 100%);
+    --gradient-warm:linear-gradient(135deg,#f7a21b 0%,#e45635 100%);
+    --gradient-body:linear-gradient(135deg,#15191d 0%,#1a1f24 100%);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.45);
+    --shadow-md:0 4px 16px rgba(0,0,0,0.45);
+    --shadow-lg:0 12px 32px rgba(0,0,0,0.55);
+    --shadow-glow:0 8px 22px rgba(214,2,87,0.32);
+  }
+  [data-theme="light"] {
+    --bg-start:#f4f5fa; --bg-end:#eceef5;
+    --surface:#ffffff; --surface-alt:#f8f9fc; --surface-elevated:#ffffff;
+    --border:#dfe3ec; --border-strong:#c5cbd9;
+    --text:#15191d; --text-mid:#3d4459; --text-muted:#6b7280;
+    --primary-text:#3a4171; --primary-soft:rgba(75,83,139,0.12);
+    --accent:#e08c00; --accent-text:#7a4f00;
+    --accent-soft:rgba(247,162,27,0.14); --accent-border:rgba(224,140,0,0.45);
+    --danger:#c43e1e; --danger-text:#a83214;
+    --danger-soft:rgba(228,86,53,0.08); --danger-border:rgba(196,62,30,0.40);
+    --magenta-text:#b8004a;
+    --success:#059669;
+    --shadow-sm:0 1px 2px rgba(21,25,29,0.06);
+    --shadow-md:0 4px 14px rgba(21,25,29,0.09);
+    --shadow-lg:0 12px 30px rgba(75,83,139,0.18);
+    --shadow-glow:0 8px 22px rgba(214,2,87,0.22);
+  }
+  * { box-sizing: border-box; }
+  :root {
+    --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+    --sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  body {
+    font-family: var(--sans); margin: 0; padding: 32px 20px 48px;
+    background: var(--gradient-body); background-attachment: fixed;
+    color: var(--text); font-size: 15px; font-weight: 500; line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    transition: background .35s ease, color .35s ease;
+  }
+  h1 {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    text-align: center; color: var(--primary-text);
+    font-size: 27px; font-weight: 800; letter-spacing: -.6px;
+    margin: 0 0 28px 0; line-height: 1.2; transition: color .35s ease;
+  }
+  h1 .icon-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 54px; height: 54px;
+    background: var(--gradient-primary); border-radius: 15px;
+    box-shadow: var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,.20), inset 0 -1px 0 rgba(0,0,0,.15);
+    color: #fff; flex-shrink: 0;
+  }
+  h1 .icon-badge svg { width: 32px; height: 32px; display: block; }
+
+  /* ============ BOTÕES FLUTUANTES ============ */
+  .floating-btn {
+    position: fixed; top: 20px; width: 46px; height: 46px;
+    border-radius: 50%; background: var(--surface-elevated);
+    border: 1px solid var(--border-strong); color: var(--text-mid);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-md); z-index: 100; padding: 0;
+    transition: transform .2s, box-shadow .2s, color .2s, background .35s, border-color .35s;
+  }
+  .floating-btn:hover {
+    transform: translateY(-2px); box-shadow: var(--shadow-lg);
+    color: var(--accent); border-color: var(--accent-border);
+  }
+  .floating-btn:focus-visible {
+    outline: none; box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow-lg);
+  }
+  .floating-btn svg { width: 22px; height: 22px; display: block; }
+
+  #pdf-btn { right: 74px; }
+  #theme-toggle { right: 20px; }
+  .theme-toggle .icon-sun { display: block; }
+  .theme-toggle .icon-moon { display: none; }
+  [data-theme="light"] .theme-toggle .icon-sun { display: none; }
+  [data-theme="light"] .theme-toggle .icon-moon { display: block; }
+
+  /* ============ TABS ============ */
+  #tabs {
+    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 auto 22px;
+    padding: 7px; justify-content: center; max-width: fit-content;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: var(--shadow-sm);
+    transition: background .35s, border-color .35s;
+  }
+  #tabs button {
+    padding: 11px 20px; border: 1px solid transparent; border-radius: 9px;
+    background: transparent; color: var(--text-mid); cursor: pointer;
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+    letter-spacing: -.1px; transition: all .18s ease; white-space: nowrap;
+  }
+  #tabs button:hover { background: var(--primary-soft); color: var(--primary-text); }
+  #tabs button.active {
+    background: var(--gradient-primary); color: #fff;
+    box-shadow: 0 4px 14px rgba(214,2,87,.35), inset 0 1px 0 rgba(255,255,255,.20);
+  }
+
+  /* ============ PAINÉIS / CARTÕES ============ */
+  .panel {
+    display: none; background: var(--surface); padding: 26px;
+    border-radius: 16px; border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    transition: background .35s, border-color .35s;
+  }
+  .panel.active { display: block; }
+  .card {
+    background: var(--surface-alt); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px 22px; margin-bottom: 16px;
+    transition: border-color .2s, box-shadow .2s, background .35s;
+  }
+  .card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+  .card h3 {
+    margin: 0 0 14px 0; color: var(--primary-text);
+    font-size: 15.5px; font-weight: 700; letter-spacing: -.2px;
+    padding-bottom: 10px; border-bottom: 2px solid var(--primary-soft);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h3::before {
+    content: ''; display: inline-block; width: 4px; height: 18px;
+    background: var(--gradient-warm); border-radius: 2px; flex-shrink: 0;
+  }
+
+  .formula {
+    display: inline-block; background: var(--accent-soft);
+    border: 1px solid var(--accent-border); padding: 8px 14px;
+    border-radius: 8px; font-family: var(--mono); font-size: 12px;
+    font-weight: 500; color: var(--accent-text); margin-bottom: 16px;
+    letter-spacing: -.1px; line-height: 1.5;
+  }
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px; margin-bottom: 12px;
+  }
+  label {
+    display: block; font-family: var(--sans); font-size: 11.5px;
+    font-weight: 700; margin-bottom: 6px; color: var(--text-mid);
+    letter-spacing: .5px; text-transform: uppercase;
+  }
+  input, select, textarea {
+    width: 100%; padding: 10px 13px;
+    border: 1.5px solid var(--border-strong); border-radius: 8px;
+    font-size: 13.5px; font-family: var(--mono); font-weight: 500;
+    color: var(--text); background: var(--surface);
+    transition: border-color .15s, box-shadow .15s, background .35s, color .35s;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-muted); font-weight: 400; }
+  input:hover, select:hover, textarea:hover { border-color: var(--accent); }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3.5px var(--accent-soft);
+  }
+  textarea { min-height: 72px; line-height: 1.55; resize: vertical; }
+
+  /* ============ BOTÃO COLAR (sobre input) ============ */
+  .has-paste { position: relative; }
+  .has-paste input, .has-paste textarea { padding-right: 42px; }
+  .paste-btn {
+    position: absolute; right: 8px; bottom: 10px;
+    width: 26px; height: 26px; border-radius: 6px;
+    border: 1px solid var(--border-strong); background: var(--surface);
+    color: var(--text-muted); cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s ease;
+    opacity: 0.55;
+  }
+  .has-paste:hover .paste-btn { opacity: 0.9; }
+  .paste-btn:hover {
+    opacity: 1 !important;
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    transform: scale(1.05);
+  }
+  .paste-btn.pasted {
+    background: var(--success); color: #fff; border-color: var(--success);
+    opacity: 1;
+  }
+  .paste-btn svg { width: 14px; height: 14px; }
+  .has-paste textarea ~ .paste-btn { bottom: auto; top: 32px; }
+
+  /* ============ BOTÕES CALC ============ */
+  button.calc {
+    background: var(--gradient-primary); color: #fff; border: none;
+    padding: 12px 28px; border-radius: 9px; cursor: pointer;
+    font-family: var(--sans); font-size: 13.5px; font-weight: 700;
+    letter-spacing: .3px;
+    box-shadow: 0 4px 14px rgba(214,2,87,.30), inset 0 1px 0 rgba(255,255,255,.20);
+    transition: transform .15s, box-shadow .2s, filter .2s;
+  }
+  button.calc:hover {
+    transform: translateY(-1px); filter: brightness(1.08);
+    box-shadow: 0 8px 22px rgba(214,2,87,.42), inset 0 1px 0 rgba(255,255,255,.20);
+  }
+  button.calc:active { transform: translateY(0); filter: brightness(.96); }
+
+  /* ============ RESULTADOS ============ */
+  .result {
+    position: relative;
+    margin-top: 16px;
+    padding: 16px 48px 16px 20px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    font-family: var(--mono); font-size: 12.5px; font-weight: 500;
+    white-space: pre-wrap; line-height: 1.7;
+    color: var(--text); box-shadow: var(--shadow-sm);
+    overflow-x: auto;
+    transition: background .35s, border-color .35s, color .35s;
+  }
+  .result:empty { display: none; }
+  .result.error {
+    background: var(--danger-soft);
+    border-color: var(--danger-border);
+    border-left-color: var(--danger);
+    color: var(--danger-text);
+  }
+  .result .section-title { color: var(--primary-text); font-weight: 800; }
+  .result small {
+    color: var(--text-muted); font-family: var(--sans);
+    font-weight: 500; font-size: 12px; display: inline-block;
+    margin-top: 10px; line-height: 1.6; letter-spacing: 0;
+  }
+
+  /* ============ BOTÃO COPIAR (sobre resultado) ============ */
+  .copy-btn {
+    position: absolute; top: 8px; right: 8px;
+    width: 30px; height: 30px; border-radius: 7px;
+    border: 1px solid var(--border-strong); background: var(--surface);
+    color: var(--text-muted); cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s ease;
+    opacity: 0.5;
+  }
+  .result:hover .copy-btn { opacity: 0.9; }
+  .copy-btn:hover {
+    opacity: 1 !important;
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .copy-btn.copied {
+    background: var(--success); color: #fff; border-color: var(--success);
+    opacity: 1;
+  }
+  .copy-btn svg { width: 15px; height: 15px; }
+
+  ::selection { background: var(--magenta); color: #fff; }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 12px 32px; }
+    h1 { font-size: 20px; gap: 12px; padding: 0 100px; }
+    h1 .icon-badge { width: 44px; height: 44px; border-radius: 12px; }
+    h1 .icon-badge svg { width: 26px; height: 26px; }
+    .panel { padding: 18px; }
+    .card { padding: 16px; }
+    #tabs button { padding: 9px 14px; font-size: 12.5px; }
+    .floating-btn { top: 12px; width: 40px; height: 40px; }
+    #pdf-btn { right: 60px; }
+    #theme-toggle { right: 12px; }
+  }
+
+  /* ==================== ESTILOS DE IMPRESSÃO / PDF ==================== */
+  @media print {
+    @page { margin: 12mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body {
+      background: #fff !important; color: #000 !important;
+      padding: 0 !important; font-size: 10pt !important;
+    }
+    h1 {
+      color: #000 !important; font-size: 16pt !important;
+      margin: 0 0 12pt !important; page-break-after: avoid;
+    }
+    h1 .icon-badge {
+      width: 32px !important; height: 32px !important;
+      background: #000 !important; box-shadow: none !important;
+      border-radius: 8px !important;
+    }
+    h1 .icon-badge svg { width: 20px !important; height: 20px !important; }
+
+    #pdf-btn, #theme-toggle, #tabs, button.calc,
+    .copy-btn, .paste-btn {
+      display: none !important;
+    }
+
+    .panel {
+      display: block !important; background: #fff !important;
+      border: 1px solid #ccc !important; box-shadow: none !important;
+      padding: 10pt !important; margin-bottom: 14pt !important;
+      border-radius: 0 !important;
+      page-break-inside: auto;
+    }
+    .panel + .panel { page-break-before: auto; }
+
+    .card {
+      background: #fff !important; border: 1px solid #ddd !important;
+      box-shadow: none !important; padding: 8pt !important;
+      margin-bottom: 10pt !important; border-radius: 0 !important;
+      page-break-inside: avoid;
+    }
+    .card h3 {
+      color: #000 !important; border-bottom: 2px solid #ccc !important;
+      font-size: 11pt !important; padding-bottom: 4pt !important;
+      margin-bottom: 8pt !important;
+      page-break-after: avoid;
+    }
+    .card h3::before { background: #000 !important; }
+    .formula {
+      background: #f5f5f5 !important; border: 1px solid #ccc !important;
+      color: #000 !important; font-size: 9pt !important;
+      padding: 4pt 8pt !important; margin-bottom: 8pt !important;
+    }
+    label { color: #000 !important; font-size: 8pt !important; }
+    input, textarea, select {
+      border: 1px solid #999 !important;
+      background: #fff !important; color: #000 !important;
+      padding: 3pt 6pt !important; font-size: 9pt !important;
+    }
+    .grid { gap: 6pt !important; margin-bottom: 6pt !important; }
+    .result {
+      background: #fafafa !important; border: 1px solid #ccc !important;
+      border-left: 3px solid #000 !important; color: #000 !important;
+      font-size: 9pt !important; padding: 6pt 8pt !important;
+      box-shadow: none !important; page-break-inside: avoid;
+      white-space: pre-wrap !important; border-radius: 0 !important;
+      margin-top: 6pt !important;
+    }
+    .result.error {
+      background: #fff5f5 !important; border-left-color: #c00 !important;
+      color: #900 !important;
+    }
+    .result small { color: #555 !important; }
+  }
+</style>
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('theme');
+      document.documentElement.setAttribute('data-theme', saved === 'light' ? 'light' : 'dark');
+    } catch (e) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  })();
+</script>
+</head>
+<body>
+
+<!-- Botão PDF -->
+<button id="pdf-btn" class="floating-btn" type="button"
+        aria-label="Exportar em PDF" title="Exportar em PDF">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="9" y1="13" x2="15" y2="13"/>
+    <line x1="9" y1="17" x2="15" y2="17"/>
+  </svg>
+</button>
+
+<!-- Botão tema -->
+<button id="theme-toggle" class="floating-btn theme-toggle" type="button"
+        aria-label="Alternar tema claro/escuro" title="Alternar tema">
+  <svg class="icon-sun" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <svg class="icon-moon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+          stroke="currentColor" stroke-width="2" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<h1>
+  <span class="icon-badge">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="12" y1="12" x2="4" y2="6" stroke="currentColor" stroke-width="1.6" opacity=".78"/>
+      <line x1="12" y1="12" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" opacity=".78"/>
+      <line x1="12" y1="12" x2="4" y2="18" stroke="currentColor" stroke-width="1.6" opacity=".78"/>
+      <line x1="12" y1="12" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" opacity=".78"/>
+      <circle cx="12" cy="12" r="2.4" fill="currentColor"/>
+      <circle cx="4" cy="6" r="1.9" fill="currentColor"/>
+      <circle cx="20" cy="6" r="1.9" fill="currentColor"/>
+      <circle cx="4" cy="18" r="1.9" fill="currentColor"/>
+      <circle cx="20" cy="18" r="1.9" fill="currentColor"/>
+    </svg>
+  </span>
+  Calculadora de Redes — Passo a Passo
+</h1>
+
+<nav id="tabs">
+  <button data-tab="ip" class="active">Endereçamento IP</button>
+  <button data-tab="desempenho">Desempenho</button>
+  <button data-tab="fisica">Camada Física</button>
+  <button data-tab="enlace">Enlace / Erros</button>
+  <button data-tab="routing">Roteamento & Transporte</button>
+</nav>
+
+<!-- =================== IP =================== -->
+<section id="ip" class="panel active">
+  <div class="card">
+    <h3>Análise de IP / Máscara</h3>
+    <span class="formula">Rede = IP AND Máscara · Broadcast = Rede OR ~Máscara · Hosts = 2^(32−p) − 2</span>
+    <div class="grid">
+      <div><label>Endereço IP</label><input id="ipInput" value="192.168.1.10"></div>
+      <div><label>Prefixo CIDR (/n)</label><input id="prefixInput" type="number" min="0" max="32" value="24"></div>
+    </div>
+    <button class="calc" onclick="calcIP()">Calcular</button>
+    <div id="ipResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Subnetting (divisão em sub-redes)</h3>
+    <span class="formula">Nº sub-redes = 2^(novo − antigo) · Hosts/sub-rede = 2^(32−novo) − 2</span>
+    <div class="grid">
+      <div><label>Rede base</label><input id="subIpInput" value="192.168.1.0"></div>
+      <div><label>Prefixo original</label><input id="subOldPrefix" type="number" min="0" max="32" value="24"></div>
+      <div><label>Novo prefixo</label><input id="subNewPrefix" type="number" min="0" max="32" value="26"></div>
+    </div>
+    <button class="calc" onclick="calcSubnetting()">Calcular</button>
+    <div id="subResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Fragmentação IP</h3>
+    <span class="formula">Offset em unidades de 8 bytes · MF=1 exceto no último fragmento</span>
+    <div class="grid">
+      <div><label>Datagrama IP total (bytes)</label><input id="fragTotal" type="number" value="4000"></div>
+      <div><label>MTU do enlace (bytes)</label><input id="fragMtu" type="number" value="1500"></div>
+      <div><label>Cabeçalho IP (bytes)</label><input id="fragHdr" type="number" value="20"></div>
+    </div>
+    <button class="calc" onclick="calcFragmentation()">Calcular</button>
+    <div id="fragResult" class="result"></div>
+  </div>
+</section>
+
+<!-- =================== DESEMPENHO =================== -->
+<section id="desempenho" class="panel">
+  <div class="card">
+    <h3>Atrasos de Transmissão e Propagação</h3>
+    <span class="formula">D_trans = L / R · D_prop = d / s · D_total = D_trans + D_prop</span>
+    <div class="grid">
+      <div><label>Pacote L (bytes)</label><input id="dSize" type="number" value="1500"></div>
+      <div><label>Banda R (Mbps)</label><input id="dBw" type="number" step="any" value="100"></div>
+      <div><label>Distância d (km)</label><input id="dDist" type="number" step="any" value="1000"></div>
+      <div><label>Vel. propagação s (km/s)</label><input id="dSpeed" type="number" step="any" value="200000"></div>
+    </div>
+    <button class="calc" onclick="calcDelays()">Calcular</button>
+    <div id="delayResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Vazão (Throughput) com Gargalo</h3>
+    <span class="formula">Throughput = min(R₁, R₂, ..., Rₙ)</span>
+    <div class="grid">
+      <div><label>Taxas dos enlaces (Mbps, separadas por vírgula)</label><input id="thrInput" value="100, 10, 1000"></div>
+    </div>
+    <button class="calc" onclick="calcThroughput()">Calcular</button>
+    <div id="thrResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Produto Largura de Banda × Atraso (BDP)</h3>
+    <span class="formula">BDP = R × RTT  (bits)  ·  BDP = R × RTT / 8  (bytes)</span>
+    <div class="grid">
+      <div><label>RTT (ms)</label><input id="bdpRtt" type="number" step="any" value="50"></div>
+      <div><label>Banda R (Mbps)</label><input id="bdpBw" type="number" step="any" value="100"></div>
+    </div>
+    <button class="calc" onclick="calcBDP()">Calcular</button>
+    <div id="bdpResult" class="result"></div>
+  </div>
+</section>
+
+<!-- =================== CAMADA FÍSICA =================== -->
+<section id="fisica" class="panel">
+  <div class="card">
+    <h3>Nyquist — Canal sem Ruído</h3>
+    <span class="formula">Taxa_máx = 2 · H · log₂(V)</span>
+    <div class="grid">
+      <div><label>Largura de banda H (Hz)</label><input id="nyqH" type="number" value="3000"></div>
+      <div><label>Níveis de sinal V</label><input id="nyqV" type="number" value="8"></div>
+    </div>
+    <button class="calc" onclick="calcNyquist()">Calcular</button>
+    <div id="nyqResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Shannon — Canal com Ruído</h3>
+    <span class="formula">C = H · log₂(1 + S/N) · S/N(dB) = 10·log₁₀(S/N linear)</span>
+    <div class="grid">
+      <div><label>Largura de banda H (Hz)</label><input id="shH" type="number" value="3000"></div>
+      <div><label>S/N (linear)</label><input id="shSN" type="number" step="any" value="1000"></div>
+      <div><label>ou S/N (dB) — opcional</label><input id="shSNdB" type="number" step="any" placeholder="ex: 30"></div>
+    </div>
+    <button class="calc" onclick="calcShannon()">Calcular</button>
+    <div id="shResult" class="result"></div>
+  </div>
+</section>
+
+<!-- =================== ENLACE =================== -->
+<section id="enlace" class="panel">
+  <div class="card">
+    <h3>CRC — Verificação de Redundância Cíclica</h3>
+    <span class="formula">Divisão polinomial mod 2 (XOR deslizante); resto = CRC</span>
+    <div class="grid">
+      <div style="grid-column: 1 / -1;"><label>Dados (binário)</label><input id="crcData" value="1101011011"></div>
+      <div style="grid-column: 1 / -1;"><label>Polinômio gerador (binário)</label><input id="crcGen" value="10011"></div>
+    </div>
+    <button class="calc" onclick="calcCRC()">Calcular</button>
+    <div id="crcResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Checksum da Internet (16 bits)</h3>
+    <span class="formula">Soma em complemento de um com carry wrap; checksum = ~soma</span>
+    <div class="grid">
+      <div style="grid-column: 1 / -1;">
+        <label>Palavras hexadecimais de 16 bits</label>
+        <textarea id="cksData">4500 003C 1C46 4000 4006 0000 C0A8 0001 C0A8 00C7</textarea>
+      </div>
+    </div>
+    <button class="calc" onclick="calcChecksum()">Calcular</button>
+    <div id="cksResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Eficiência de Protocolos ARQ (sem erros)</h3>
+    <span class="formula">a = T_prop / T_trans · U_SW = 1/(1+2a) · U_GBN = min(1, N/(1+2a))</span>
+    <div class="grid">
+      <div><label>Tamanho do quadro L (bits)</label><input id="arqSize" type="number" value="1000"></div>
+      <div><label>Banda R (bps)</label><input id="arqBw" type="number" value="1000000"></div>
+      <div><label>RTT (ms)</label><input id="arqRtt" type="number" step="any" value="20"></div>
+      <div><label>Tamanho da janela N</label><input id="arqN" type="number" value="4"></div>
+    </div>
+    <button class="calc" onclick="calcARQ()">Calcular</button>
+    <div id="arqResult" class="result"></div>
+  </div>
+</section>
+
+<!-- =================== ROUTING & TRANSPORTE =================== -->
+<section id="routing" class="panel">
+  <div class="card">
+    <h3>Algoritmo de Dijkstra (passo a passo)</h3>
+    <span class="formula">Menor caminho entre a origem e todos os nós do grafo</span>
+    <div class="grid">
+      <div style="grid-column: 1 / -1;">
+        <label>Arestas (formato: A-B:4, B-C:2, ...)</label>
+        <textarea id="dijEdges">A-B:4, A-C:2, B-C:5, B-D:10, C-E:3, E-D:4, D-F:11</textarea>
+      </div>
+      <div><label>Nó de origem</label><input id="dijSource" value="A"></div>
+    </div>
+    <button class="calc" onclick="calcDijkstra()">Calcular</button>
+    <div id="dijResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Throughput TCP limitado por Janela</h3>
+    <span class="formula">Throughput ≤ Janela / RTT</span>
+    <div class="grid">
+      <div><label>Janela TCP (KB)</label><input id="tcpWinKb" type="number" step="any" value="64"></div>
+      <div><label>RTT (ms)</label><input id="tcpRtt" type="number" step="any" value="80"></div>
+    </div>
+    <button class="calc" onclick="calcTcpWindow()">Calcular</button>
+    <div id="tcpResult" class="result"></div>
+  </div>
+
+  <div class="card">
+    <h3>Erlang B — Probabilidade de Bloqueio</h3>
+    <span class="formula">B(N,A) = (A·B(N−1,A)) / (N + A·B(N−1,A))</span>
+    <div class="grid">
+      <div><label>Canais N</label><input id="erlBN" type="number" value="10"></div>
+      <div><label>Tráfego A (Erlang)</label><input id="erlBA" type="number" step="any" value="5"></div>
+    </div>
+    <button class="calc" onclick="calcErlangB()">Calcular</button>
+    <div id="erlBResult" class="result"></div>
+  </div>
+</section>
+
+<script>
+/* =================== TEMA =================== */
+(function () {
+  const root = document.documentElement;
+  const btn = document.getElementById('theme-toggle');
+  btn.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    btn.setAttribute('aria-label', next === 'light' ? 'Mudar para tema escuro' : 'Mudar para tema claro');
+  });
+})();
+
+/* =================== EXPORTAR PDF =================== */
+document.getElementById('pdf-btn').addEventListener('click', () => {
+  window.print();
+});
+
+/* =================== COPIAR / COLAR =================== */
+function copyToClipboard(text, btn) {
+  const onSuccess = () => {
+    const original = btn.innerHTML;
+    btn.classList.add('copied');
+    btn.innerHTML = '✓';
+    btn.title = 'Copiado!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = original;
+      btn.title = 'Copiar resultado';
+    }, 1500);
+  };
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); onSuccess(); }
+    catch (e) { btn.title = 'Não foi possível copiar'; }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const PASTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>';
+
+/* =================== UTILITÁRIOS =================== */
+const SEP = '─'.repeat(52);
+function showResult(id, html, isError = false) {
+  const el = document.getElementById(id);
+  if (!html || !String(html).trim()) {
+    el.innerHTML = '';
+    el.className = 'result';
+    return;
+  }
+  el.className = 'result' + (isError ? ' error' : '');
+  el.innerHTML = String(html);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy-btn';
+  btn.title = 'Copiar resultado';
+  btn.setAttribute('aria-label', 'Copiar resultado');
+  btn.innerHTML = COPY_ICON;
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.copy-btn').forEach(b => b.remove());
+    copyToClipboard(clone.innerText.trim(), btn);
+  });
+  el.appendChild(btn);
+}
+function ipToInt(ip){return ip.split('.').reduce((a,o)=>(a<<8)+(parseInt(o)&255),0)>>>0;}
+function intToIp(n){return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.');}
+function prefixToMask(p){return p===0?0:(0xFFFFFFFF<<(32-p))>>>0;}
+function bin8(n){return (n&255).toString(2).padStart(8,'0');}
+function ipToBinDotted(ip){return ip.split('.').map(o=>bin8(parseInt(o))).join('.');}
+function intToBinDotted(n){return [n>>>24,(n>>>16)&255,(n>>>8)&255,n&255].map(bin8).join('.');}
+function binAND(a,b){const A=a.split('.'),B=b.split('.');return A.map((oct,i)=>oct.split('').map((c,j)=>(c==='1'&&B[i][j]==='1')?'1':'0').join('')).join('.');}
+function binOR(a,b){const A=a.split('.'),B=b.split('.');return A.map((oct,i)=>oct.split('').map((c,j)=>(c==='1'||B[i][j]==='1')?'1':'0').join('')).join('.');}
+function binNOT(a){return a.split('.').map(o=>o.split('').map(c=>c==='1'?'0':'1').join('')).join('.');}
+function dottedBinToInt(d){return d.split('.').reduce((acc,o)=>(acc<<8)+parseInt(o,2),0)>>>0;}
+function isValidIP(ip){return /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)&&ip.split('.').every(o=>parseInt(o)>=0&&parseInt(o)<=255);}
+
+/* =================== TABS =================== */
+document.querySelectorAll('#tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* =================== IP =================== */
+function calcIP() {
+  const ip = document.getElementById('ipInput').value.trim();
+  const prefix = parseInt(document.getElementById('prefixInput').value);
+  if (!isValidIP(ip)) return showResult('ipResult', '❌ IP inválido.', true);
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) return showResult('ipResult', '❌ Prefixo inválido.', true);
+  const ipBin = ipToBinDotted(ip);
+  const maskBin = intToBinDotted(prefixToMask(prefix));
+  const notMaskBin = binNOT(maskBin);
+  const netBin = binAND(ipBin, maskBin);
+  const bcBin = binOR(netBin, notMaskBin);
+  const netInt = dottedBinToInt(netBin);
+  const bcInt = dottedBinToInt(bcBin);
+  const hostBits = 32 - prefix;
+  const totalAddrs = Math.pow(2, hostBits);
+  const numHosts = hostBits >= 2 ? totalAddrs - 2 : totalAddrs;
+  const firstHost = hostBits >= 2 ? netInt + 1 : netInt;
+  const lastHost  = hostBits >= 2 ? bcInt - 1 : bcInt;
+  showResult('ipResult', `📥 ENTRADA
+  IP:      ${ip}
+  Prefixo: /${prefix}
+
+🔢 DECOMPOSIÇÃO BINÁRIA
+  IP:        ${ipBin}   (${ip})
+  Máscara:   ${maskBin}   (${intToIp(prefixToMask(prefix))})
+  ~Máscara:  ${notMaskBin}   (${intToIp(~prefixToMask(prefix) >>> 0)})
+
+⚙️ CÁLCULO DA REDE  (IP AND Máscara)
+    ${ipBin}
+  & ${maskBin}
+  ${SEP}
+  = ${netBin}   → ${intToIp(netInt)}
+
+⚙️ CÁLCULO DO BROADCAST  (Rede OR ~Máscara)
+    ${netBin}
+  | ${notMaskBin}
+  ${SEP}
+  = ${bcBin}   → ${intToIp(bcInt)}
+
+⚙️ FAIXA DE HOSTS
+  Bits de host      = 32 − ${prefix} = ${hostBits}
+  Total de endereços = 2^${hostBits} = ${totalAddrs}
+  Hosts utilizáveis  = 2^${hostBits} − 2 = ${numHosts}
+  Primeiro host      = Rede + 1       = ${intToIp(netInt)} + 1 = ${intToIp(firstHost)}
+  Último host        = Broadcast − 1  = ${intToIp(bcInt)} − 1 = ${intToIp(lastHost)}
+
+✅ RESULTADO
+  Rede:       ${intToIp(netInt)}/${prefix}
+  Broadcast:  ${intToIp(bcInt)}
+  Faixa:      ${intToIp(firstHost)} – ${intToIp(lastHost)}   (${numHosts} hosts utilizáveis)`);
+}
+
+function calcSubnetting() {
+  const ip = document.getElementById('subIpInput').value.trim();
+  const oldP = parseInt(document.getElementById('subOldPrefix').value);
+  const newP = parseInt(document.getElementById('subNewPrefix').value);
+  if (!isValidIP(ip)) return showResult('subResult', '❌ IP inválido.', true);
+  if (isNaN(oldP) || isNaN(newP) || oldP < 0 || newP > 32 || newP < oldP)
+    return showResult('subResult', '❌ Prefixos inválidos.', true);
+  const oldMask = prefixToMask(oldP), newMask = prefixToMask(newP);
+  const netInt = (ipToInt(ip) & oldMask) >>> 0;
+  const netBin = intToBinDotted(netInt);
+  const oldMaskBin = intToBinDotted(oldMask);
+  const newMaskBin = intToBinDotted(newMask);
+  const borrowedBits = newP - oldP;
+  const numSubnets = Math.pow(2, borrowedBits);
+  const hostBits = 32 - newP;
+  const hostsPerSub = hostBits > 0 ? Math.pow(2, hostBits) - 2 : 0;
+  const step = Math.pow(2, hostBits);
+  let newMaskVis = '', bitCount = 0;
+  for (let i = 0; i < newMaskBin.length; i++) {
+    const c = newMaskBin[i];
+    if (c === '.') { newMaskVis += '.'; continue; }
+    if (bitCount >= oldP && bitCount < newP && c === '1') newMaskVis += '[' + c + ']';
+    else newMaskVis += ' ' + c + ' ';
+    bitCount++;
+  }
+  let html = `📥 ENTRADA
+  Rede base:      ${intToIp(netInt)}/${oldP}   (IP informado: ${ip})
+  Prefixo antigo: /${oldP}
+  Prefixo novo:   /${newP}
+
+🔢 DECOMPOSIÇÃO BINÁRIA DAS MÁSCARAS
+  Máscara /${oldP}: ${oldMaskBin}
+  Máscara /${newP}: ${newMaskVis}
+                    ↖ bits emprestados (${borrowedBits} bits)
+
+⚙️ PASSO 1 — Bits emprestados
+  ${newP} − ${oldP} = ${borrowedBits}
+
+⚙️ PASSO 2 — Número de sub-redes
+  2^${borrowedBits} = ${numSubnets}
+
+⚙️ PASSO 3 — Hosts por sub-rede
+  Bits para hosts = 32 − ${newP} = ${hostBits}
+  Endereços/sub-rede = 2^${hostBits} = ${step}
+  Hosts utilizáveis = 2^${hostBits} − 2 = ${hostsPerSub}
+
+⚙️ PASSO 4 — Listagem (bloco = ${step})
+`;
+  const max = Math.min(numSubnets, 16);
+  for (let i = 0; i < max; i++) {
+    const subNet = (netInt + i * step) >>> 0;
+    const subBc  = (subNet + step - 1) >>> 0;
+    html += `  Sub-rede ${String(i + 1).padStart(2)}: ${intToIp(subNet)}/${newP}\n`;
+    html += `              binário: ${intToBinDotted(subNet)}\n`;
+    html += `              faixa:   ${intToIp(subNet + 1)} – ${intToIp(subBc - 1)}   (broadcast ${intToIp(subBc)})\n\n`;
+  }
+  if (numSubnets > max) html += `  ... (${numSubnets - max} sub-redes omitidas)\n`;
+  showResult('subResult', html);
+}
+
+function calcFragmentation() {
+  const total = parseInt(document.getElementById('fragTotal').value);
+  const mtu = parseInt(document.getElementById('fragMtu').value);
+  const hdr = parseInt(document.getElementById('fragHdr').value);
+  if (isNaN(total) || isNaN(mtu) || isNaN(hdr)) return showResult('fragResult', '❌ Preencha todos os campos.', true);
+  if (mtu <= hdr) return showResult('fragResult', '❌ MTU deve ser maior que o cabeçalho.', true);
+  if (total < hdr) return showResult('fragResult', '❌ Datagrama menor que o cabeçalho.', true);
+  const dataSize = total - hdr;
+  const maxDataRaw = mtu - hdr;
+  const maxData = maxDataRaw - (maxDataRaw % 8);
+  let html = `📥 ENTRADA
+  Datagrama total: ${total} bytes
+  MTU do enlace:   ${mtu} bytes
+  Cabeçalho IP:    ${hdr} bytes
+
+🔢 DECOMPOSIÇÃO BINÁRIA
+  Total:     ${total} = 0b${total.toString(2)}
+  MTU:       ${mtu} = 0b${mtu.toString(2)}
+  Cabeçalho: ${hdr} = 0b${hdr.toString(2)}
+  Dados:     ${dataSize} = 0b${dataSize.toString(2)}
+
+⚙️ PASSO 1 — Verificar fragmentação
+  ${total} ${total <= mtu ? '≤' : '>'} ${mtu}  →  ${total <= mtu ? 'NÃO precisa fragmentar' : 'PRECISA fragmentar'}
+
+`;
+  if (total <= mtu) { html += `✅ RESULTADO\n  Datagrama não precisa ser fragmentado.`; return showResult('fragResult', html); }
+  html += `⚙️ PASSO 2 — Dados por fragmento
+  Dados = ${total} − ${hdr} = ${dataSize} bytes
+  Máx. dados/frag = ${mtu} − ${hdr} = ${maxDataRaw} bytes
+  Ajuste múltiplo de 8: ${maxDataRaw} − (${maxDataRaw} mod 8) = ${maxData} bytes
+
+⚙️ PASSO 3 — Número de fragmentos
+  ⌈${dataSize} / ${maxData}⌉ = ${Math.ceil(dataSize / maxData)}
+
+⚙️ PASSO 4 — Lista dos fragmentos
+`;
+  let remaining = dataSize, offsetBytes = 0, i = 0;
+  const numFrags = Math.ceil(dataSize / maxData);
+  while (remaining > 0) {
+    const fragData = Math.min(maxData, remaining);
+    const mf = remaining > fragData ? 1 : 0;
+    html += `  Fragmento ${i + 1}:\n`;
+    html += `    dados = ${fragData} bytes (binário: ${fragData.toString(2)})\n`;
+    html += `    offset = ${offsetBytes / 8} (unidades de 8B)   ← ${offsetBytes} / 8\n`;
+    html += `    MF = ${mf} ${mf === 1 ? '(mais fragmentos)' : '(último)'}\n`;
+    html += `    total = ${fragData} + ${hdr} = ${fragData + hdr} bytes\n\n`;
+    remaining -= fragData; offsetBytes += fragData; i++;
+  }
+  html += `✅ RESULTADO\n  ${numFrags} fragmentos IP gerados a partir de ${total} bytes.`;
+  showResult('fragResult', html);
+}
+
+/* =================== DESEMPENHO =================== */
+function calcDelays() {
+  const size = parseFloat(document.getElementById('dSize').value);
+  const bwMbps = parseFloat(document.getElementById('dBw').value);
+  const distKm = parseFloat(document.getElementById('dDist').value);
+  const speedKmS = parseFloat(document.getElementById('dSpeed').value);
+  if ([size, bwMbps, distKm, speedKmS].some(v => !isFinite(v) || v <= 0))
+    return showResult('delayResult', '❌ Valores > 0.', true);
+  const bits = size * 8, bwBps = bwMbps * 1e6;
+  const distM = distKm * 1000, speedMs = speedKmS * 1000;
+  const tTrans = bits / bwBps, tProp = distM / speedMs;
+  showResult('delayResult', `📥 ENTRADA
+  Tamanho L:      ${size} bytes
+  Banda R:        ${bwMbps} Mbps
+  Distância d:    ${distKm} km
+  Vel. prop. s:   ${speedKmS} km/s
+
+🔢 CONVERSÕES
+  L = ${size} × 8 = ${bits} bits
+  R = ${bwMbps} × 10⁶ = ${bwBps.toLocaleString('pt-BR')} bps
+  d = ${distKm} × 1000 = ${distM.toLocaleString('pt-BR')} m
+  s = ${speedKmS} × 1000 = ${speedMs.toLocaleString('pt-BR')} m/s
+
+⚙️ D_trans = L / R
+  = ${bits} / ${bwBps.toExponential(2)}
+  = ${tTrans.toExponential(4)} s = ${(tTrans * 1e3).toFixed(4)} ms
+
+⚙️ D_prop = d / s
+  = ${distM} / ${speedMs.toExponential(2)}
+  = ${tProp.toExponential(4)} s = ${(tProp * 1e3).toFixed(4)} ms
+
+⚙️ D_total = D_trans + D_prop
+  = ${(tTrans * 1e3).toFixed(4)} + ${(tProp * 1e3).toFixed(4)}
+  = ${((tTrans + tProp) * 1e3).toFixed(4)} ms
+
+✅ RESULTADO
+  D_trans = ${(tTrans * 1e3).toFixed(4)} ms
+  D_prop  = ${(tProp * 1e3).toFixed(4)} ms
+  D_total = ${((tTrans + tProp) * 1e3).toFixed(4)} ms`);
+}
+
+function calcThroughput() {
+  const raw = document.getElementById('thrInput').value.trim();
+  const rates = raw.split(',').map(s => parseFloat(s.trim())).filter(v => !isNaN(v) && v > 0);
+  if (rates.length === 0) return showResult('thrResult', '❌ Introduza pelo menos uma taxa válida.', true);
+  const min = Math.min(...rates);
+  const minIdx = rates.indexOf(min) + 1;
+  let html = `📥 ENTRADA\n  Enlaces: ${rates.join(', ')} Mbps\n\n🔢 COMPARAÇÃO\n`;
+  rates.forEach((r, i) => { html += `  R${i + 1} = ${r} Mbps${i + 1 === minIdx ? '   ← menor' : ''}\n`; });
+  html += `\n⚙️ CÁLCULO\n  Throughput = min(${rates.join(', ')}) = ${min} Mbps\n\n`;
+  html += `✅ RESULTADO\n  Throughput fim-a-fim: ${min} Mbps\n  Enlace gargalo:       #${minIdx} (${min} Mbps)\n\n`;
+  html += `  <small>O throughput é limitado pelo enlace mais lento do caminho.</small>`;
+  showResult('thrResult', html);
+}
+
+function calcBDP() {
+  const rttMs = parseFloat(document.getElementById('bdpRtt').value);
+  const bwMbps = parseFloat(document.getElementById('bdpBw').value);
+  if (rttMs <= 0 || bwMbps <= 0) return showResult('bdpResult', '❌ Valores > 0.', true);
+  const rttS = rttMs / 1000, bwBps = bwMbps * 1e6;
+  const bdpBits = rttS * bwBps, bdpBytes = bdpBits / 8;
+  showResult('bdpResult', `📥 ENTRADA
+  RTT:   ${rttMs} ms
+  Banda: ${bwMbps} Mbps
+
+🔢 CONVERSÕES
+  RTT em s: ${rttMs} / 1000 = ${rttS} s
+  Banda em bps: ${bwMbps} × 10⁶ = ${bwBps.toLocaleString('pt-BR')} bps
+
+⚙️ BDP = R × RTT
+  = ${bwBps.toExponential(2)} × ${rttS}
+  = ${bdpBits.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bits
+
+  BDP (bytes) = ${bdpBits.toLocaleString('pt-BR', {maximumFractionDigits: 2})} / 8
+              = ${bdpBytes.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bytes
+              = ${(bdpBytes / 1024).toFixed(2)} KB
+
+✅ RESULTADO
+  BDP = ${bdpBits.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bits = ${bdpBytes.toFixed(0)} bytes (${(bdpBytes / 1024).toFixed(2)} KB)`);
+}
+
+/* =================== CAMADA FÍSICA =================== */
+function calcNyquist() {
+  const H = parseFloat(document.getElementById('nyqH').value);
+  const V = parseFloat(document.getElementById('nyqV').value);
+  if (H <= 0 || V < 2) return showResult('nyqResult', '❌ H > 0 e V ≥ 2.', true);
+  const log2V = Math.log2(V), rate = 2 * H * log2V;
+  showResult('nyqResult', `📥 ENTRADA
+  Largura de banda H: ${H} Hz
+  Níveis de sinal V:  ${V}
+
+🔢 DECOMPOSIÇÃO
+  V = ${V} → 2^k = ${V} → k = log₂(${V}) = ${log2V}
+  Verificação: 2^${log2V} = ${Math.pow(2, log2V)}
+
+⚙️ Taxa_máx = 2 · H · log₂(V)
+  = 2 · ${H} · log₂(${V})
+  = ${2 * H} · ${log2V}
+  = ${rate.toLocaleString('pt-BR')} bps
+
+✅ RESULTADO
+  Taxa = ${rate.toLocaleString('pt-BR')} bps = ${(rate / 1e3).toFixed(3)} kbps = ${(rate / 1e6).toFixed(6)} Mbps`);
+}
+
+function calcShannon() {
+  const H = parseFloat(document.getElementById('shH').value);
+  let SN = parseFloat(document.getElementById('shSN').value);
+  const dB = parseFloat(document.getElementById('shSNdB').value);
+  let conversion = '';
+  if (!isNaN(dB)) { SN = Math.pow(10, dB / 10); conversion = `  S/N informado em dB: ${dB}\n  S/N linear = 10^(${dB}/10) = ${SN.toFixed(4)}\n`; }
+  if (H <= 0 || SN <= 0) return showResult('shResult', '❌ Valores inválidos.', true);
+  const logArg = 1 + SN, log2Arg = Math.log2(logArg), C = H * log2Arg;
+  showResult('shResult', `📥 ENTRADA
+  Largura de banda H: ${H} Hz
+  S/N (linear):       ${SN}
+
+🔢 CONVERSÃO
+${conversion}  1 + S/N = 1 + ${SN} = ${logArg}
+
+⚙️ C = H · log₂(1 + S/N)
+  = ${H} · log₂(${logArg})
+  = ${H} · ${log2Arg.toFixed(6)}
+  = ${C.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bps
+
+✅ RESULTADO
+  C = ${C.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bps = ${(C / 1e3).toFixed(3)} kbps = ${(C / 1e6).toFixed(6)} Mbps
+
+  <small>A taxa de Nyquist nunca pode exceder a capacidade de Shannon.</small>`);
+}
+
+/* =================== ENLACE =================== */
+function calcCRC() {
+  const data = document.getElementById('crcData').value.trim();
+  const gen = document.getElementById('crcGen').value.trim();
+  if (!/^[01]+$/.test(data) || !/^[01]+$/.test(gen)) return showResult('crcResult', '❌ Use apenas 0 e 1.', true);
+  if (gen.length < 2) return showResult('crcResult', '❌ Gerador muito curto.', true);
+  const glen = gen.length, zeros = '0'.repeat(glen - 1);
+  const work = (data + zeros).split('');
+  const steps = [];
+  for (let i = 0; i <= work.length - glen; i++) {
+    if (work[i] === '1') {
+      const before = work.join('');
+      for (let j = 0; j < glen; j++) work[i + j] = work[i + j] === gen[j] ? '0' : '1';
+      steps.push({ i, before, after: work.join('') });
+    }
+  }
+  const crc = work.slice(-(glen - 1)).join('');
+  const transmitted = data + crc;
+  const vArr = transmitted.split('');
+  for (let i = 0; i <= vArr.length - glen; i++) {
+    if (vArr[i] === '1') for (let j = 0; j < glen; j++) vArr[i + j] = vArr[i + j] === gen[j] ? '0' : '1';
+  }
+  const verifyRem = vArr.slice(-(glen - 1)).join('');
+  let html = `📥 ENTRADA
+  Dados (k bits):    ${data}   (${data.length} bits)
+  Gerador (n+1 bits):${gen}   (${glen} bits, grau ${glen - 1})
+
+🔢 DECOMPOSIÇÃO INICIAL
+  Anexar ${glen - 1} zeros: ${data} + ${zeros} = ${data + zeros}
+
+⚙️ DIVISÃO POLINOMIAL (XOR deslizante)
+
+`;
+  steps.forEach((s, idx) => {
+    html += `  Passo ${idx + 1} (pos ${s.i}, MSB=1):
+    Antes:    ${s.before}
+    Gerador:  ${' '.repeat(s.i)}${gen}
+    XOR:      ${s.after}
+    ${'─'.repeat(52)}
+`;
+  });
+  html += `\n⚙️ RESTO (CRC)
+  Últimos ${glen - 1} bits = ${crc}
+
+⚙️ QUADRO A TRANSMITIR
+  ${data} + ${crc} = ${transmitted}
+
+🔍 VERIFICAÇÃO (receptor)
+  Resto = ${verifyRem}  ${verifyRem.split('').every(b => b === '0') ? '✅ quadro íntegro' : '❌ erro'}
+
+✅ RESULTADO
+  CRC = ${crc}
+  Quadro = ${transmitted}`;
+  showResult('crcResult', html);
+}
+
+function calcChecksum() {
+  const raw = document.getElementById('cksData').value.replace(/\s/g, '');
+  if (!/^[0-9a-fA-F]*$/.test(raw) || raw.length % 4 !== 0)
+    return showResult('cksResult', '❌ Hex, múltiplo de 4 dígitos.', true);
+  const words = [];
+  for (let i = 0; i < raw.length; i += 4) words.push(parseInt(raw.substr(i, 4), 16));
+  const hex = v => v.toString(16).toUpperCase().padStart(4, '0');
+  const bin16 = v => v.toString(2).padStart(16, '0');
+  let html = `📥 ENTRADA (${words.length} palavras de 16 bits)\n\n🔢 DECOMPOSIÇÃO BINÁRIA\n`;
+  words.forEach((w, i) => { html += `  w${i + 1}: 0x${hex(w)} = ${bin16(w)}\n`; });
+  html += `\n⚙️ SOMA EM COMPLEMENTO DE UM (carry wrap)\n`;
+  let sum = 0;
+  words.forEach((w, i) => {
+    const before = sum; sum += w;
+    let wrap = '';
+    if (sum > 0xFFFF) { const hi = sum >>> 16, lo = sum & 0xFFFF; sum = lo + hi; wrap = `  (carry ${hi} somado de volta)`; }
+    html += `  Passo ${i + 1}: 0x${hex(before)} + 0x${hex(w)} = 0x${hex(sum)}${wrap}\n`;
+  });
+  const checksum = (~sum) & 0xFFFF, verify = (sum + checksum) & 0xFFFF;
+  html += `\n⚙️ CHECKSUM
+  Soma = 0x${hex(sum)} = ${bin16(sum)}
+  ~Soma = 0x${hex(checksum)} = ${bin16(checksum)}
+
+🔍 VERIFICAÇÃO
+  Soma + Checksum = 0x${hex(verify)}  ${verify === 0xFFFF ? '✅ quadro íntegro' : '❌ erro'}
+
+✅ RESULTADO
+  Checksum = 0x${hex(checksum)}  (${bin16(checksum)})`;
+  showResult('cksResult', html);
+}
+
+function calcARQ() {
+  const Lbits = parseFloat(document.getElementById('arqSize').value);
+  const R = parseFloat(document.getElementById('arqBw').value);
+  const rttMs = parseFloat(document.getElementById('arqRtt').value);
+  const N = parseInt(document.getElementById('arqN').value);
+  if ([Lbits, R, rttMs, N].some(v => isNaN(v) || v <= 0)) return showResult('arqResult', '❌ Valores > 0.', true);
+  const tTrans = Lbits / R, rttS = rttMs / 1000, tProp = rttS / 2;
+  const a = tProp / tTrans, uSW = 1 / (1 + 2 * a), uGBN = Math.min(1, N / (1 + 2 * a));
+  showResult('arqResult', `📥 ENTRADA
+  Quadro L: ${Lbits} bits
+  Banda R:  ${R} bps
+  RTT:      ${rttMs} ms
+  Janela N: ${N}
+
+🔢 CONVERSÕES
+  RTT em s: ${rttMs} / 1000 = ${rttS} s
+  T_prop (RTT/2): ${rttS} / 2 = ${tProp} s
+
+⚙️ PASSO 1 — T_trans
+  T_trans = ${Lbits} / ${R} = ${tTrans} s = ${(tTrans * 1000).toFixed(4)} ms
+
+⚙️ PASSO 2 — Parâmetro "a"
+  a = T_prop / T_trans = ${(tProp * 1000).toFixed(4)} / ${(tTrans * 1000).toFixed(4)} = ${a.toFixed(4)}
+
+⚙️ PASSO 3 — Eficiências
+  Stop-and-Wait:
+    U = 1 / (1 + 2·${a.toFixed(4)}) = 1 / ${(1 + 2 * a).toFixed(4)} = ${(uSW * 100).toFixed(2)}%
+
+  Go-Back-N (N = ${N}):
+    U = min(1, ${N} / ${(1 + 2 * a).toFixed(4)}) = min(1, ${(N / (1 + 2 * a)).toFixed(4)}) = ${(uGBN * 100).toFixed(2)}%
+
+  Selective Repeat (N = ${N}):
+    U = ${(uGBN * 100).toFixed(2)}% (sem erros = GBN)
+
+✅ RESULTADO
+  a = ${a.toFixed(4)}
+  Stop-and-Wait:      ${(uSW * 100).toFixed(2)}%
+  Go-Back-N (N=${N}):  ${(uGBN * 100).toFixed(2)}%
+  Selective Repeat:   ${(uGBN * 100).toFixed(2)}%`);
+}
+
+/* =================== ROUTING & TRANSPORTE =================== */
+function calcDijkstra() {
+  const edges = document.getElementById('dijEdges').value.trim();
+  const source = document.getElementById('dijSource').value.trim();
+  if (!edges || !source) return showResult('dijResult', '❌ Preencha arestas e origem.', true);
+  const graph = {};
+  edges.split(',').forEach(pair => {
+    const [uv, w] = pair.split(':');
+    if (!uv || w === undefined) return;
+    const [u, v] = uv.trim().split('-').map(s => s.trim());
+    const weight = parseFloat(w);
+    if (isNaN(weight) || !u || !v) return;
+    graph[u] = graph[u] || {}; graph[v] = graph[v] || {};
+    graph[u][v] = weight; graph[v][u] = weight;
+  });
+  if (!graph[source]) return showResult('dijResult', `❌ Origem "${source}" não encontrada.`, true);
+  const nodes = Object.keys(graph).sort();
+  const dist = {}, prev = {}, visited = new Set();
+  nodes.forEach(n => { dist[n] = Infinity; prev[n] = null; });
+  dist[source] = 0;
+  const iterLog = [];
+  let iter = 0;
+  while (true) {
+    let u = null;
+    for (const n of nodes) if (!visited.has(n) && (u === null || dist[n] < dist[u])) u = n;
+    if (u === null || dist[u] === Infinity) break;
+    visited.add(u); iter++;
+    const updates = [];
+    for (const [v, w] of Object.entries(graph[u])) {
+      const alt = dist[u] + w;
+      if (alt < dist[v]) {
+        const antes = dist[v] === Infinity ? '∞' : dist[v];
+        dist[v] = alt; prev[v] = u;
+        updates.push(`    ${u}→${v}: ${dist[u]} + ${w} = ${alt}   (antes era ${antes})`);
+      }
+    }
+    iterLog.push({ iter, u, uDist: dist[u], updates, snapshot: { ...dist } });
+  }
+  let html = `📥 ENTRADA
+  Origem: ${source}
+  Nós: ${nodes.join(', ')}
+  Arestas: ${edges}
+
+⚙️ INICIALIZAÇÃO
+  dist[${source}] = 0
+  dist[outros] = ∞
+
+⚙️ ITERAÇÕES
+`;
+  iterLog.forEach(it => {
+    html += `\n  Iteração ${it.iter}: escolhido ${it.u} (dist = ${it.uDist})\n`;
+    html += it.updates.length === 0 ? `    (nenhuma atualização)\n` : it.updates.join('\n') + '\n';
+    html += `    Estado: ${nodes.map(n => `${n}=${it.snapshot[n] === Infinity ? '∞' : it.snapshot[n]}`).join(', ')}\n`;
+  });
+  html += `\n⚙️ CAMINHOS MÍNIMOS\n`;
+  nodes.forEach(n => {
+    let path = [], cur = n;
+    while (cur) { path.unshift(cur); cur = prev[cur]; }
+    html += `  ${source} → ${n}: custo ${dist[n] === Infinity ? '∞' : dist[n]}   [${path.join(' → ') || '—'}]\n`;
+  });
+  html += `\n✅ RESULTADO\n`;
+  nodes.forEach(n => {
+    let path = [], cur = n;
+    while (cur) { path.unshift(cur); cur = prev[cur]; }
+    html += `  ${n}: distância ${dist[n] === Infinity ? '∞' : dist[n]}  via ${path.join(' → ') || '—'}\n`;
+  });
+  showResult('dijResult', html);
+}
+
+function calcTcpWindow() {
+  const winKb = parseFloat(document.getElementById('tcpWinKb').value);
+  const rttMs = parseFloat(document.getElementById('tcpRtt').value);
+  if (winKb <= 0 || rttMs <= 0) return showResult('tcpResult', '❌ Valores > 0.', true);
+  const winBytes = winKb * 1024, winBits = winBytes * 8;
+  const rttS = rttMs / 1000, throughputBps = winBits / rttS, throughputMbps = throughputBps / 1e6;
+  showResult('tcpResult', `📥 ENTRADA
+  Janela TCP: ${winKb} KB
+  RTT:        ${rttMs} ms
+
+🔢 CONVERSÕES
+  Janela em bytes: ${winKb} × 1024 = ${winBytes.toLocaleString('pt-BR')} bytes
+  Janela em bits:  ${winBits.toLocaleString('pt-BR')} bits
+  RTT em s: ${rttMs} / 1000 = ${rttS} s
+
+⚙️ Throughput ≤ Janela / RTT
+  = ${winBits.toLocaleString('pt-BR')} / ${rttS}
+  = ${throughputBps.toLocaleString('pt-BR', {maximumFractionDigits: 2})} bps
+  = ${throughputMbps.toFixed(2)} Mbps
+
+✅ RESULTADO
+  Throughput máximo = ${throughputMbps.toFixed(2)} Mbps
+
+  <small>Se a janela for menor que o BDP, aumente o window scaling.</small>`);
+}
+
+function calcErlangB() {
+  const N = parseInt(document.getElementById('erlBN').value);
+  const A = parseFloat(document.getElementById('erlBA').value);
+  if (N <= 0 || A < 0) return showResult('erlBResult', '❌ Valores inválidos.', true);
+  let B = 1;
+  let html = `📥 ENTRADA
+  Canais N: ${N}
+  Tráfego A: ${A} Erlang
+
+⚙️ ITERAÇÕES
+  B(0,A) = 1
+`;
+  for (let n = 1; n <= N; n++) {
+    const Bprev = B;
+    B = (A * B) / (n + A * B);
+    html += `  B(${n},${A}) = (${A}·${Bprev.toFixed(4)}) / (${n} + ${A}·${Bprev.toFixed(4)}) = ${B.toFixed(6)}\n`;
+  }
+  html += `\n✅ RESULTADO
+  Prob. de bloqueio = ${(B * 100).toFixed(4)}%
+  Tráfego escoado = A·(1−B) = ${A}·${(1 - B).toFixed(6)} = ${(A * (1 - B)).toFixed(4)} Erlang`;
+  showResult('erlBResult', html);
+}
+
+/* =================== INIT =================== */
+function addPasteButtons() {
+  document.querySelectorAll('input:not([type="hidden"]), textarea').forEach(input => {
+    if (input.dataset.pasteReady) return;
+    input.dataset.pasteReady = '1';
+    const parent = input.parentElement;
+    if (!parent) return;
+    parent.classList.add('has-paste');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'paste-btn';
+    btn.title = 'Colar da área de transferência';
+    btn.setAttribute('aria-label', 'Colar');
+    btn.innerHTML = PASTE_ICON;
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      try {
+        const text = await navigator.clipboard.readText();
+        input.value = text.trim();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        btn.classList.add('pasted');
+        setTimeout(() => btn.classList.remove('pasted'), 800);
+        input.focus();
+      } catch (err) {
+        input.focus();
+        input.select();
+        btn.title = 'Pressione Ctrl+V para colar';
+        setTimeout(() => { btn.title = 'Colar da área de transferência'; }, 3000);
+      }
+    });
+    parent.appendChild(btn);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', addPasteButtons);
+} else {
+  addPasteButtons();
+}
+</script>
+</body>
+</html>
